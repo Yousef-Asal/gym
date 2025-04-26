@@ -12,22 +12,41 @@ x_space = 310
 y_space = 83
 mid_position = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 background = pygame.image.load(os.path.join("assets", "background.png")).convert()
+progress_bar_full = pygame.image.load(os.path.join("assets", "progress_bar_full.png")).convert()
 plant_stages = [pygame.image.load(os.path.join("assets", "stage-1.png")).convert(),
                 pygame.image.load(os.path.join("assets", "stage-2.png")).convert(),
                 pygame.image.load(os.path.join("assets", "stage-3.png")).convert(),
                 pygame.image.load(os.path.join("assets", "stage-4.png")).convert(),
                 pygame.image.load(os.path.join("assets", "stage-5.png")).convert()]
 GREEN = (44, 149, 65)
-
+PURPLE = (143,125,183)
+# Rectangle properties
+rect_width = 38
+max_height = 405  # Maximum possible height
+current_height = 10  # Starting height
+fixed_bottom = 670  # Fixed bottom position
+rect_x = 1357
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
+            
+    #Background and plant
     screen.blit(background, (0,0))
     screen.blit(plant_stages[4], mid_position-pygame.Vector2(100,200))
+
+    #Progress bar
+    current_height = min(current_height + 10, max_height)
+    rect_y = fixed_bottom - current_height
+    growing_rect = pygame.Rect(rect_x, rect_y, rect_width, current_height)
+    pygame.draw.rect(screen, PURPLE, growing_rect)
+    pygame.draw.line(screen, PURPLE, (rect_x, fixed_bottom), 
+                    (rect_x + rect_width, fixed_bottom), 3)
+    if current_height == max_height:
+        screen.blit(progress_bar_full, (1356,250))
+
 
     #Environment
     #1 Temp

@@ -2,7 +2,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import os
-import my_game
+import pygame
 
 class HydroponicEnv(gym.Env):
     def __init__(self):
@@ -38,6 +38,34 @@ class HydroponicEnv(gym.Env):
         self.episode_length = 1000
         self.current_step = 0
 
+        #pygame init 
+        
+        pygame.init()
+        self.screen = pygame.display.set_mode((1440, 900))
+        self.clock = pygame.time.Clock()
+        self.running = True
+        self.dt = 0
+        self.font_path = os.path.join('assets', 'Lucida_Handwriting_Italic.ttf')
+        self.font = pygame.font.Font(self.font_path, 32)
+        self.x_space = 310
+        self.y_space = 83
+        self.mid_position = pygame.Vector2(self.screen.get_width() / 2, self.screen.get_height() / 2)
+        self.background = pygame.image.load(os.path.join("assets", "background.png")).convert()
+        self.progress_bar_full = pygame.image.load(os.path.join("assets", "progress_bar_full.png")).convert()
+        self.plant_stages = [pygame.image.load(os.path.join("assets", "stage-1.png")).convert(),
+                        pygame.image.load(os.path.join("assets", "stage-2.png")).convert(),
+                        pygame.image.load(os.path.join("assets", "stage-3.png")).convert(),
+                        pygame.image.load(os.path.join("assets", "stage-4.png")).convert(),
+                        pygame.image.load(os.path.join("assets", "stage-5.png")).convert()]
+        self.GREEN = (44, 149, 65)
+        self.PURPLE = (143,125,183)
+        # Rectangle properties
+        self.rect_width = 38
+        self.max_height = 405  
+        self.current_height = 0  
+        self.fixed_bottom = 670 
+        self.rect_x = 1357
+
     def reset(self, seed=None, options=None):
         self.Done = False
         super().reset(seed=seed)
@@ -68,96 +96,144 @@ class HydroponicEnv(gym.Env):
         self.last_reward = reward
         # Apply action to the state (later we can define how it affects plant growth)
         # For now, we skip state transitions to keep it simple
+        #pygame loop
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                
+        #Background and plant
+        self.screen.blit(self.background, (0,0))
+        self.screen.blit(self.plant_stages[4], self.mid_position-pygame.Vector2(100,200))
 
+        #Progress bar
+        self.current_height = min(self.current_height + 10, self.max_height)
+        self.rect_y = self.fixed_bottom - self.current_height
+        self.growing_rect = pygame.Rect(self.rect_x, self.rect_y, self.rect_width, self.current_height)
+        pygame.draw.rect(self.screen, self.PURPLE, self.growing_rect)
+        pygame.draw.line(self.screen, self.PURPLE, (self.rect_x, self.fixed_bottom), 
+                        (self.rect_x + self.rect_width, self.fixed_bottom), 3)
+        if self.current_height == self.max_height:
+            self.screen.blit(self.progress_bar_full, (1356,250))
+
+
+        #Environment
+        #1 Temp
+        self.temp_ts = self.font.render("32.6", True, self.GREEN)
+        self.temp_tr = self.temp_ts.get_rect()
+        self.temp_tr.center = (pygame.Vector2(250,60))
+        self.screen.blit(self.temp_ts, self.temp_tr)
+
+        #2 RH
+        self.rh_ts = self.font.render("32.6", True, self.GREEN)
+        self.rh_tr = self.rh_ts.get_rect()
+        self.rh_tr.center = (pygame.Vector2(250,60+self.y_space))
+        self.screen.blit(self.rh_ts, self.rh_tr)
+
+        #3 PH
+        self.ph_ts = self.font.render("32.6", True, self.GREEN)
+        self.ph_tr = self.ph_ts.get_rect()
+        self.ph_tr.center = (pygame.Vector2(250+self.x_space,60))
+        self.screen.blit(self.ph_ts, self.ph_tr)
+
+        #4 EC
+        self.ec_ts = self.font.render("32.6", True, self.GREEN)
+        self.ec_tr = self.ec_ts.get_rect()
+        self.ec_tr.center = (pygame.Vector2(250+self.x_space,60+self.y_space))
+        self.screen.blit(self.ec_ts, self.ec_tr)
+
+        #5 Light Intensity
+        self.light_intensity_ts = self.font.render("32.6", True, self.GREEN)
+        self.light_intensity_tr = self.light_intensity_ts.get_rect()
+        self.light_intensity_tr.center = (pygame.Vector2(250+2*self.x_space,60))
+        self.screen.blit(self.light_intensity_ts, self.light_intensity_tr)
+
+        #6 Light duration
+        self.light_duration_ts = self.font.render("32.6", True, self.GREEN)
+        self.light_duration_tr = self.light_duration_ts.get_rect()
+        self.light_duration_tr.center = (pygame.Vector2(250+2*self.x_space,60+self.y_space))
+        self.screen.blit(self.light_duration_ts, self.light_duration_tr)
+
+        #7 Water duration/period
+        self.water_duration_ts = self.font.render("32.6", True, self.GREEN)
+        self.water_duration_tr = self.water_duration_ts.get_rect()
+        self.water_duration_tr.center = (pygame.Vector2(250+3*self.x_space,60))
+        self.screen.blit(self.water_duration_ts, self.water_duration_tr)
+
+        #8 Num of water periods
+        self.water_periods_ts = self.font.render("32.6", True, self.GREEN)
+        self.water_periods_tr = self.water_periods_ts.get_rect()
+        self.water_periods_tr.center = (pygame.Vector2(250+3*self.x_space,60+self.y_space))
+        self.screen.blit(self.water_periods_ts, self.water_periods_tr)
+
+        #8 Day
+        self.day_ts = self.font.render("4", True, self.GREEN)
+        self.day_tr = self.water_periods_ts.get_rect()
+        self.day_tr.center = (pygame.Vector2(725,221))
+        self.screen.blit(self.day_ts, self.day_tr)
+
+        #Actions
+        #1 Temp
+        self.action_temp_ts = self.font.render("32.6", True, self.GREEN)
+        self.action_temp_tr = self.action_temp_ts.get_rect()
+        self.action_temp_tr.center = (pygame.Vector2(250,765))
+        self.screen.blit(self.action_temp_ts, self.action_temp_tr)
+
+        #2 RH
+        self.action_rh_ts = self.font.render("32.6", True, self.GREEN)
+        self.action_rh_tr = self.action_rh_ts.get_rect()
+        self.action_rh_tr.center = (pygame.Vector2(250,765+self.y_space))
+        self.screen.blit(self.action_rh_ts, self.action_rh_tr)
+
+        #3 PH
+        self.action_ph_ts = self.font.render("32.6", True, self.GREEN)
+        self.action_ph_tr = self.action_ph_ts.get_rect()
+        self.action_ph_tr.center = (pygame.Vector2(250+self.x_space,765))
+        self.screen.blit(self.action_ph_ts, self.action_ph_tr)
+
+        #4 EC
+        self.action_ec_ts = self.font.render("32.6", True, self.GREEN)
+        self.action_ec_tr = self.action_ec_ts.get_rect()
+        self.action_ec_tr.center = (pygame.Vector2(250+self.x_space,765+self.y_space))
+        self.screen.blit(self.action_ec_ts, self.action_ec_tr)
+
+        #5 Light Intensity
+        self.action_light_intensity_ts = self.font.render("32.6", True, self.GREEN)
+        self.action_light_intensity_tr = self.action_light_intensity_ts.get_rect()
+        self.action_light_intensity_tr.center = (pygame.Vector2(250+2*self.x_space,765))
+        self.screen.blit(self.action_light_intensity_ts, self.action_light_intensity_tr)
+
+        #6 Light duration
+        self.action_light_duration_ts = self.font.render("32.6", True, self.GREEN)
+        self.action_light_duration_tr = self.action_light_duration_ts.get_rect()
+        self.action_light_duration_tr.center = (pygame.Vector2(250+2*self.x_space,765+self.y_space))
+        self.screen.blit(self.action_light_duration_ts, self.action_light_duration_tr)
+
+        #7 Water duration/period
+        self.action_water_duration_ts = self.font.render("32.6", True, self.GREEN)
+        self.action_water_duration_tr = self.action_water_duration_ts.get_rect()
+        self.action_water_duration_tr.center = (pygame.Vector2(250+3*self.x_space,765))
+        self.screen.blit(self.action_water_duration_ts, self.action_water_duration_tr)
+
+        #8 Num of water periods
+        self.action_water_periods_ts = self.font.render("32.6", True, self.GREEN)
+        self.action_water_periods_tr = self.action_water_periods_ts.get_rect()
+        self.action_water_periods_tr.center = (pygame.Vector2(250+3*self.x_space,765+self.y_space))
+        self.screen.blit(self.action_water_periods_ts, self.action_water_periods_tr)
+
+        #Equations
+        #1 Biomass
+        self.biomass_ts = self.font.render("32.6", True, self.GREEN)
+        self.biomass_tr = self.biomass_ts.get_rect()
+        self.biomass_tr.center = (pygame.Vector2(192,370))
+        self.screen.blit(self.biomass_ts, self.biomass_tr)
+
+        #2 Height
+        self.height_ts = self.font.render("32.6", True, self.GREEN)
+        self.height_tr = self.height_ts.get_rect()
+        self.height_tr.center = (pygame.Vector2(192,516))
+        self.screen.blit(self.height_ts, self.height_tr)
+
+        pygame.display.flip()
+
+        self.dt = self.clock.tick(60) / 1000
         return self.state, reward, terminated, truncated, {}
-
-    def render(self, mode="human"):
-        if not hasattr(self, 'window'):
-            my_game.init()
-            self.window_size = (1440, 900)
-            self.window = my_game.display.set_mode(self.window_size)
-            my_game.display.set_caption("Hydroponic Farm RL")
-            self.font = my_game.font.SysFont(None, 24)
-
-            # Fixed icon size
-            self.icon_size = (32, 32)
-            self.icons = {
-                "temp": my_game.transform.scale(my_game.image.load(os.path.join("assets", "Temp.png")), self.icon_size),
-                "humidity": my_game.transform.scale(my_game.image.load(os.path.join("assets", "Humidity.png")), self.icon_size),
-                "light": my_game.transform.scale(my_game.image.load(os.path.join("assets", "Light.png")), self.icon_size),
-                "ec": my_game.transform.scale(my_game.image.load(os.path.join("assets", "EC.png")), self.icon_size),
-                "ph": my_game.transform.scale(my_game.image.load(os.path.join("assets", "PH.png")), self.icon_size),
-            }
-
-            self.plant_drawings = {
-                "0_0": my_game.image.load(os.path.join("assets", "phase1.png")),
-                "0_1": my_game.image.load(os.path.join("assets", "phase2.png")),
-                "0_2": my_game.image.load(os.path.join("assets", "phase3.png")),
-                "1_0": my_game.image.load(os.path.join("assets", "phase1.png")),
-                "1_1": my_game.image.load(os.path.join("assets", "phase2.png")),
-                "1_2": my_game.image.load(os.path.join("assets", "phase3.png")),
-                "2_0": my_game.image.load(os.path.join("assets", "phase1.png")),
-                "2_1": my_game.image.load(os.path.join("assets", "phase2.png")),
-                "2_2": my_game.image.load(os.path.join("assets", "phase3.png")),
-            }
-
-        for event in my_game.event.get():
-            if event.type == my_game.QUIT:
-                my_game.quit()
-                exit()
-
-        self.window.fill((245, 255, 250))  # Soft background color
-
-        # --- Observations Panel ---
-        labels = {
-            "temp": f"Temp: {self.state['temp'][0]:.1f}°C",
-            "humidity": f"Humidity: {self.state['humidity'][0]:.1f}%",
-            "light": f"Light: {self.state['light'][0]:.1f} lx",
-            "ec": f"EC: {self.state['ec'][0]:.2f}",
-            "ph": f"pH: {self.state['ph'][0]:.2f}",
-        }
-
-        y = 10
-        for key in labels:
-            icon = self.icons[key]
-            self.window.blit(icon, (10, y))
-
-            text_surface = self.font.render(labels[key], True, (0, 0, 0))
-            text_y = y + (self.icon_size[1] - text_surface.get_height()) // 2
-            self.window.blit(text_surface, (10 + self.icon_size[0] + 10, text_y))
-
-            y += self.icon_size[1] + 10
-
-        # --- Plant Visualization ---
-        plant_key = f"{self.state['plant_type']}_{self.state['plant_stage']}"
-        plant_img = self.plant_drawings.get(plant_key)
-        if plant_img:
-            center_x = self.window_size[0] // 2 - plant_img.get_width() // 2
-            center_y = self.window_size[1] // 2 - plant_img.get_height() // 2
-            self.window.blit(plant_img, (center_x, center_y))
-        else:
-            missing = self.font.render("No image for this plant stage.", True, (255, 0, 0))
-            self.window.blit(missing, (self.window_size[0] // 2 - 100, self.window_size[1] // 2))
-
-        # --- Actions & Reward Display ---
-        if hasattr(self, 'last_action') and self.last_action is not None:
-            formatted_action = []
-            for k, v in self.last_action.items():
-                if isinstance(v, np.ndarray):
-                    formatted = f"{k}: {v[0]:.2f}"
-                else:
-                    formatted = f"{k}: {v}"
-                formatted_action.append(formatted)
-            action_str = " | ".join(formatted_action)
-        else:
-            action_str = "N/A"
-
-        action_text = self.font.render(f"Last Action: {action_str}", True, (0, 100, 0))
-        reward_val = getattr(self, 'last_reward', 0)
-        reward_text = self.font.render(f"Reward: {reward_val:.2f}", True, (0, 100, 0))
-
-        self.window.blit(action_text, (0, 550))
-        self.window.blit(reward_text, (0, 570))
-
-        my_game.display.flip()
-
