@@ -13,11 +13,11 @@ class HydroponicEnv(gym.Env):
             "plant_stage": spaces.Discrete(5),   
             "day":  spaces.Discrete(365),
             "watering_cycles": spaces.Discrete(11), 
-            "watering_period": spaces.Discrete(1411),  
+            "watering_period": spaces.Discrete(49),  
             "temp": spaces.Discrete(51),
             "RH": spaces.Discrete(61),
             "light_intensity": spaces.Discrete(21),
-            "light_duration": spaces.Discrete(1441),
+            "light_duration": spaces.Discrete(49),
             "ec": spaces.Discrete(51),
             "ph": spaces.Discrete(51)
         })
@@ -25,11 +25,11 @@ class HydroponicEnv(gym.Env):
         # Action space
         self.action_space = spaces.Dict({
             "watering_cycles": spaces.Discrete(11), 
-            "watering_period": spaces.Discrete(1411),  
+            "watering_period": spaces.Discrete(49),  
             "temp": spaces.Discrete(51),
             "RH": spaces.Discrete(61),
             "light_intensity": spaces.Discrete(21),
-            "light_duration": spaces.Discrete(1441),
+            "light_duration": spaces.Discrete(49),
             "ec": spaces.Discrete(51),
             "ph": spaces.Discrete(51)
         })
@@ -53,10 +53,10 @@ class HydroponicEnv(gym.Env):
         self.background = pygame.image.load(os.path.join("assets", "background.png")).convert()
         self.progress_bar_full = pygame.image.load(os.path.join("assets", "progress_bar_full.png")).convert()
         self.plant_stages = [pygame.image.load(os.path.join("assets", "stage-1.png")).convert(),
-                        pygame.image.load(os.path.join("assets", "stage-2.png")).convert(),
-                        pygame.image.load(os.path.join("assets", "stage-3.png")).convert(),
-                        pygame.image.load(os.path.join("assets", "stage-4.png")).convert(),
-                        pygame.image.load(os.path.join("assets", "stage-5.png")).convert()]
+                             pygame.image.load(os.path.join("assets", "stage-2.png")).convert(),
+                             pygame.image.load(os.path.join("assets", "stage-3.png")).convert(),
+                             pygame.image.load(os.path.join("assets", "stage-4.png")).convert(),
+                             pygame.image.load(os.path.join("assets", "stage-5.png")).convert()]
         self.GREEN = (44, 149, 65)
         self.PURPLE = (143,125,183)
         # Rectangle properties
@@ -73,11 +73,11 @@ class HydroponicEnv(gym.Env):
             "plant_stage": 0,                                  # min=0 (Discrete(5): 0-4
             "day": 0,                                          # min=0 (Discrete(365): 0-364
             "watering_cycles": 0,                              # min=0 (Discrete(11): 0-10
-            "watering_period": 0,                              # min=0 (Discrete(1411): 0-1410
+            "watering_period": 0,                              # min=0 (Discrete(1411): 0-49
             "temp": np.array([0], dtype=np.int32),             # min=0 (Discrete(51): 0-50 → maps to 10°C
             "RH": np.array([0], dtype=np.int32),               # min=0 (Discrete(61): 0-60 → maps to 30% RH
             "light_intensity": np.array([0], dtype=np.int32),  # min=0 (Discrete(21): 0-20 → maps to 0 units
-            "light_duration": np.array([0], dtype=np.int32),   # min=0 (Discrete(1441): 0-1440
+            "light_duration": np.array([0], dtype=np.int32),   # min=0 (Discrete(1441): 0-49
             "ec": np.array([0], dtype=np.int32),               # min=0 (Discrete(51): 0-50 → maps to 0.0
             "ph": np.array([0], dtype=np.int32)                # min=0 (Discrete(51): 0-50 → maps to 5.0
         }
