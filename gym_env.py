@@ -3,6 +3,7 @@ from gymnasium import spaces
 import numpy as np
 import os
 import pygame
+import math
 
 class HydroponicEnv(gym.Env):
     def __init__(self):
@@ -70,6 +71,7 @@ class HydroponicEnv(gym.Env):
         self.rect_x = 1357
 
     def reset(self, seed=None, options=None):
+        self.day=0
         self.Done = False
         self.plant_died = False
         super().reset(seed=seed)
@@ -148,13 +150,140 @@ class HydroponicEnv(gym.Env):
       self.state['ec'][0] = action['ec']
       self.state['ph'][0] = action['ph']
 
-    def calculate_reward():
+    def calc_growth (self) : 
+        growth = 0 # initial growth 
+
+        #constants optimal 
+        dli_optimal =8
+        tempreture_optimal = 25 
+        ph_optimal = 6.4
+        ec_optimal = 1.4
+        rh_optimal = 55
+        water_duration_optimal = 1.5 # 1.5hr
+        n_cycles_optimal = 5
+
+
+        # constants sigma 
+        dli_sigma = 3
+        tempreture_sigma =8
+        ph_sigma = 0.7
+        ec_sigma = 0.8
+        rh_sigma = 15.8
+        water_duration_sigma =0.8 
+        n_cycles_sigma =  1.5
+
+        #light 
+        ppfd = self.state['light_intensity'][0]*0.0185
+        DLI = ppfd*self.state['light_duration'][0]*3600/1000000
+
+        f_light = self.factor_function(dli_optimal,DLI,dli_sigma)
+
+        # tempreture 
+        f_temp = self.factor_function(tempreture_optimal ,self.state['temp'][0] , tempreture_sigma)
+        
+        #ph 
+        f_ph = self.factor_function(ph_optimal , self.state['ph'][0], ph_sigma)
+
+        #ec
+        f_ec = self.factor_function(ec_optimal , self.state['ec'][0] , ec_sigma)
+
+        # rh 
+        f_rh = self.factor_function(rh_optimal , self.state['RH'][0] , rh_sigma)
+
+        #water 
+        f_water_duration = self.factor_function(water_duration_optimal ,self.state['watering_period'][0] , water_duration_sigma)
+        f_n_cycles = self.factor_function (n_cycles_optimal , self.state['watering_cycles'][0] , n_cycles_sigma)
+        RUE = 3
+        growth = RUE * f_light * f_temp * f_ph * f_ec * f_rh * f_water_duration * f_n_cycles  
+        print(type(growth))
+        return float(growth)
+
+
+    def factor_function (self,x_optimal , x , sigma_x): 
+        return np.exp(-((x-x_optimal)**2)/(2*(sigma_x)**2))
+    
+    def damage_loss (self,decay_coff=0,biomass=0): 
+        D_t = float(self.d_t(self.state['light_intensity'][0],"light_I")+ self.d_t(self.state['light_duration'][0],"light_D")+ self.d_t(self.state['temp'][0],"temp")+
+                  self.d_t(self.state['RH'][0],"humidity")
+                +self.d_t(self.state['ph'][0],"ph")+ self.d_t(self.state['ec'][0],"ec")+ self.d_t(self.state['watering_period'][0]*self.state['watering_cycles'][0],"TWD"))
+
+        print(type(D_t))
+        return D_t
+
+    def d_t(self,condition,condition_name:str):
+        conditions_factors={
+        # light indensity
+        "light_I":{
+        "light_I_optimal": 10000,
+        "light_I_low" : [3000, -500,3] ,
+        "light_I_high" : [65000,100000,5.2]},
+
+        # light duration
+        "light_D":{
+        "light_D_optimal": 10,
+        "light_D_low" : [5,-1,6.4] ,
+        "light_D_high" : [14,30,2.3]},
+
+        # temp
+        "temp":{
+        "temp_optimal": 25,
+        "temp_low" : [7,-1,3.3] ,
+        "temp_high" : [40,54,3.3]},
+        
+        # humidity
+        "humidity":{
+        "humidity_optimal": 55,
+        "humidity_low" : [200,400,1] ,
+        "humidity_high" : [200,400,1]},
+
+        # ph
+        "ph":{
+        "ph_optimal": 6.4,
+        "ph_low" : [4.4,1.8,2.0] ,
+        "ph_high" : [8.2,10,2.2]},
+
+        # ec
+        "ec":{
+        "ec_optimal": 1.4,
+        "ec_low" : [0,0,2] ,
+        "ec_high" : [12,12,2]},
+
+        # total water duration (number of water cycels * hours per one cycle )
+        "TWD":{
+        "TWD_optimal": 7.5,
+        "TWD_low" : [5,-5,2.0] ,
+        "TWD_high" : [12,30,2]}
+
+        }
+        flag = 0
+        if condition < conditions_factors[condition_name][condition_name+"_optimal"] and condition < conditions_factors[condition_name][condition_name+"_low"][0] : 
+            x_critical = conditions_factors[condition_name][condition_name+"_low"][0]
+            x_max = conditions_factors[condition_name][condition_name+"_low"][1]
+            gamma = conditions_factors[condition_name][condition_name+"_low"][2]
+            flag = 1
+            # print(condition_name, {x_critical})
+        elif condition > conditions_factors[condition_name][condition_name+"_optimal"] and condition > conditions_factors[condition_name][condition_name+"_high"][0]:
+            x_critical=conditions_factors[condition_name][condition_name+"_high"][0]
+            x_max = conditions_factors[condition_name][condition_name+"_high"][1]
+            gamma = conditions_factors[condition_name][condition_name+"_high"][2]
+            flag = 1
+
+            
+        if flag== 1: 
+            f_x = max(0,((condition - x_critical) / (x_max - x_critical)) ** gamma)
+        else : 
+            f_x =0
+
+        return f_x 
+
+    def calculate_reward(self):
         #El model Hykoon hena 
         # calculate_growth_rate()
         # calculate_penality()
         # calculate_height()
         # reward logic
-        return np.random.rand()
+
+        return self.calc_growth() - (self.damage_loss() * self.calc_growth())
 
     def step(self, action):
         self.current_step += 1

@@ -22,9 +22,9 @@ GREEN = (44, 149, 65)
 PURPLE = (143,125,183)
 # Rectangle properties
 rect_width = 38
-max_height = 405  # Maximum possible height
+max_height = 405     # Maximum possible height
 current_height = 10  # Starting height
-fixed_bottom = 670  # Fixed bottom position
+fixed_bottom = 670   # Fixed bottom position
 rect_x = 1357
 while running:
     # poll for events
@@ -32,7 +32,7 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-            
+
     #Background and plant
     screen.blit(background, (0,0))
     screen.blit(plant_stages[4], mid_position-pygame.Vector2(100,200))
