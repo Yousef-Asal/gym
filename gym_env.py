@@ -3,7 +3,6 @@ from gymnasium import spaces
 import numpy as np
 import os
 import pygame
-import math
 
 class HydroponicEnv(gym.Env):
     def __init__(self):
@@ -78,14 +77,14 @@ class HydroponicEnv(gym.Env):
         self.state = {
             "plant_stage": 0,                                  # min=0 (Discrete(5): 0-4
             "day": 0,                                          # min=0 (Discrete(365): 0-364
-            "watering_cycles": np.array([0], dtype=np.int32),  # min=0 (Discrete(11): 0-10
-            "watering_period": np.array([0], dtype=np.int32),  # min=0 (Discrete(1411): 0-49
-            "temp": np.array([0], dtype=np.int32),             # min=0 (Discrete(51): 0-50 → maps to 10°C
-            "RH": np.array([0], dtype=np.int32),               # min=0 (Discrete(61): 0-60 → maps to 30% RH
-            "light_intensity": np.array([0], dtype=np.int32),  # min=0 (Discrete(41): 0-41 → maps to 0 units
-            "light_duration": np.array([0], dtype=np.int32),   # min=0 (Discrete(1441): 0-49
-            "ec": np.array([0], dtype=np.int32),               # min=0 (Discrete(51): 0-50 → maps to 0.0
-            "ph": np.array([0], dtype=np.int32)                # min=0 (Discrete(51): 0-50 → maps to 5.0
+            "watering_cycles": 0,  # min=0 (Discrete(11): 0-10
+            "watering_period": 0,  # min=0 (Discrete(1411): 0-49
+            "temp": 0,             # min=0 (Discrete(51): 0-50 → maps to 10°C
+            "RH": 0,               # min=0 (Discrete(61): 0-60 → maps to 30% RH
+            "light_intensity": 0,  # min=0 (Discrete(41): 0-41 → maps to 0 units
+            "light_duration": 0,   # min=0 (Discrete(1441): 0-49
+            "ec": 0,               # min=0 (Discrete(51): 0-50 → maps to 0.0
+            "ph": 0                # min=0 (Discrete(51): 0-50 → maps to 5.0
         }
         self.current_step = 0
         return self.state, {}
@@ -96,41 +95,41 @@ class HydroponicEnv(gym.Env):
 
         self.plant_stage = self.calculate_stage()
         
-        self.watering_cycles = self.state['watering_cycles'][0]  # Direct mapping (0-10)
+        self.watering_cycles = self.state['watering_cycles']  # Direct mapping (0-10)
 
         # Watering period: 0-24 → maps to 0-24 hr (discrete 30-minute intervals)
-        self.watering_period = 30 * self.state['watering_period'][0]  
+        self.watering_period = 30 * self.state['watering_period']
 
         # Temperature: 0-50 → maps to 10°C-60°C (0.5°C increments)
-        self.temp = 10 + self.state['temp'][0]
+        self.temp = 10 + self.state['temp']
 
         # Relative Humidity: 0-60 → maps to 30%-90% (1% increments)
-        self.RH = 30 + self.state['RH'][0]
+        self.RH = 30 + self.state['RH']
 
         # Light Intensity: 0-40 → maps to 0-20000 µmol/m²/s (500 units per step)
-        self.light_intensity = self.state['light_intensity'][0] * 500
+        self.light_intensity = self.state['light_intensity'] * 500
 
         # Light Duration: 0-49 → maps to 0-24 hours (30-minute increments)
-        self.light_duration = self.state['light_duration'][0] * 30  
+        self.light_duration = self.state['light_duration'] * 30  
 
         # EC (Electrical Conductivity): 0-50 → maps to 0.0-5.0 dS/m (0.1 increments)
-        self.ec = self.state['ec'][0] * 0.1
+        self.ec = self.state['ec'] * 0.1
 
         # pH: 0-50 → maps to 4.0-9 (0.1 increments)
-        self.ph = 4.0 + (self.state['ph'][0] * 0.1)
+        self.ph = 4.0 + (self.state['ph'] * 0.1)
 
     def _get_observation_state(self):
       return {
           'plant_stage': self.plant_stage,
           'day': self.day,
-          'watering_cycles': np.array([int(self.watering_cycles)], dtype=np.int32),
-          'watering_period': np.array([int(self.watering_period // 30)], dtype=np.int32),
-          'temp': np.array([int(self.temp - 10)], dtype=np.int32),
-          'RH': np.array([int(self.RH - 30)], dtype=np.int32),
-          'light_intensity': np.array([int(self.light_intensity // 500)], dtype=np.int32),
-          'light_duration': np.array([int(self.light_duration // 30)], dtype=np.int32),
-          'ec': np.array([int(self.ec // 0.1)], dtype=np.int32),
-          'ph': np.array([int((self.ph - 4.0) // 0.1)], dtype=np.int32)
+          'watering_cycles': self.watering_cycles,
+          'watering_period': self.watering_period // 30,
+          'temp': self.temp - 10,
+          'RH': self.RH - 30,
+          'light_intensity': self.light_intensity // 500,
+          'light_duration': self.light_duration // 30,
+          'ec': int((self.ec *10 )),
+          'ph': int((self.ph - 4.0) * 10)
     }
 
     def calculate_stage(self):
@@ -141,14 +140,14 @@ class HydroponicEnv(gym.Env):
         else: return 4
 
     def _apply_actions(self, action):
-      self.state['watering_cycles'][0] = action['watering_cycles']
-      self.state['watering_period'][0] = action['watering_period']
-      self.state['temp'][0] = action['temp']
-      self.state['RH'][0] = action['RH']
-      self.state['light_intensity'][0] = action['light_intensity']
-      self.state['light_duration'][0] = action['light_duration']
-      self.state['ec'][0] = action['ec']
-      self.state['ph'][0] = action['ph']
+      self.state['watering_cycles'] = action['watering_cycles']
+      self.state['watering_period'] = action['watering_period']
+      self.state['temp'] = action['temp']
+      self.state['RH'] = action['RH']
+      self.state['light_intensity'] = action['light_intensity']
+      self.state['light_duration'] = action['light_duration']
+      self.state['ec'] = action['ec']
+      self.state['ph'] = action['ph']
 
     def calc_growth (self) : 
         growth = 0 # initial growth 
@@ -173,39 +172,39 @@ class HydroponicEnv(gym.Env):
         n_cycles_sigma =  1.5
 
         #light 
-        ppfd = self.state['light_intensity'][0]*0.0185
-        DLI = ppfd*self.state['light_duration'][0]*3600/1000000
+        ppfd = self.state['light_intensity']*0.0185
+        DLI = ppfd*self.state['light_duration']*3600/1000000
 
         f_light = self.factor_function(dli_optimal,DLI,dli_sigma)
 
         # tempreture 
-        f_temp = self.factor_function(tempreture_optimal ,self.state['temp'][0] , tempreture_sigma)
+        f_temp = self.factor_function(tempreture_optimal ,self.state['temp'] , tempreture_sigma)
         
         #ph 
-        f_ph = self.factor_function(ph_optimal , self.state['ph'][0], ph_sigma)
+        f_ph = self.factor_function(ph_optimal , self.state['ph'], ph_sigma)
 
         #ec
-        f_ec = self.factor_function(ec_optimal , self.state['ec'][0] , ec_sigma)
+        f_ec = self.factor_function(ec_optimal , self.state['ec'] , ec_sigma)
 
         # rh 
-        f_rh = self.factor_function(rh_optimal , self.state['RH'][0] , rh_sigma)
+        f_rh = self.factor_function(rh_optimal , self.state['RH'] , rh_sigma)
 
         #water 
-        f_water_duration = self.factor_function(water_duration_optimal ,self.state['watering_period'][0] , water_duration_sigma)
-        f_n_cycles = self.factor_function (n_cycles_optimal , self.state['watering_cycles'][0] , n_cycles_sigma)
+        f_water_duration = self.factor_function(water_duration_optimal ,self.state['watering_period'] , water_duration_sigma)
+        f_n_cycles = self.factor_function (n_cycles_optimal , self.state['watering_cycles'] , n_cycles_sigma)
         RUE = 3
         growth = RUE * f_light * f_temp * f_ph * f_ec * f_rh * f_water_duration * f_n_cycles  
         print(type(growth))
-        return float(growth)
+        return growth
 
 
     def factor_function (self,x_optimal , x , sigma_x): 
         return np.exp(-((x-x_optimal)**2)/(2*(sigma_x)**2))
     
     def damage_loss (self,decay_coff=0,biomass=0): 
-        D_t = float(self.d_t(self.state['light_intensity'][0],"light_I")+ self.d_t(self.state['light_duration'][0],"light_D")+ self.d_t(self.state['temp'][0],"temp")+
-                  self.d_t(self.state['RH'][0],"humidity")
-                +self.d_t(self.state['ph'][0],"ph")+ self.d_t(self.state['ec'][0],"ec")+ self.d_t(self.state['watering_period'][0]*self.state['watering_cycles'][0],"TWD"))
+        D_t = (self.d_t(self.state['light_intensity'],"light_I")+ self.d_t(self.state['light_duration'],"light_D")+ self.d_t(self.state['temp'],"temp")+
+                  self.d_t(self.state['RH'],"humidity")
+                +self.d_t(self.state['ph'],"ph")+ self.d_t(self.state['ec'],"ec")+ self.d_t(self.state['watering_period']*self.state['watering_cycles'],"TWD"))
 
         print(type(D_t))
         return D_t
@@ -282,8 +281,12 @@ class HydroponicEnv(gym.Env):
         # calculate_penality()
         # calculate_height()
         # reward logic
+        if self.damage_loss():
+            return self.calc_growth() - (self.damage_loss() * self.calc_growth())
+        else:
+            return self.calc_growth()
 
-        return self.calc_growth() - (self.damage_loss() * self.calc_growth())
+
 
     def step(self, action):
         self.current_step += 1

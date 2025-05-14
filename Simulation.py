@@ -4,13 +4,17 @@ import random
 import math
 from collections import deque
 import colorsys
+import os
 
 
+screen_width = 1440
+screen_height = 1024
 pygame.init()
-screen = pygame.display.set_mode((1440, 900))
+screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Custom Sliders Panel")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont(None, 24)
+current_page = 'start'
 
 class Slider:
     def __init__(self, x, y, width, min_val, max_val, step, label, initial_value=None):
@@ -508,6 +512,16 @@ for i, setting in enumerate(slider_settings):
 
 plant_id = 1
 # Main loop
+
+bg1 = pygame.image.load(os.path.join("sim_assets", "bg_1.png")).convert()
+bg2 = pygame.image.load(os.path.join("sim_assets", "bg_2.png")).convert()
+bg3 = pygame.image.load(os.path.join("sim_assets", "bg_3.png")).convert()
+button1_img = pygame.image.load(os.path.join("sim_assets", "project_overview.png")).convert_alpha() 
+button1_rect = button1_img.get_rect(center=(368, 822))
+button2_img = pygame.image.load(os.path.join("sim_assets", "simulation.png")).convert_alpha() 
+button2_rect = button2_img.get_rect(center=(1046, 822))
+button3_img = pygame.image.load(os.path.join("sim_assets", "get_started.png")).convert_alpha() 
+button3_rect = button3_img.get_rect(center=(screen_width//2, 805))
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -515,22 +529,38 @@ while True:
             sys.exit()
         for slider in sliders:
             slider.handle_event(event)
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if button1_rect.collidepoint(event.pos):
+                print("Button clicked!") 
+            if button2_rect.collidepoint(event.pos):
+                current_page = 'pre_sim'
+            if button3_rect.collidepoint(event.pos):
+                current_page = 'simulation'
+    if current_page == 'start':
+        screen.blit(bg1, (0,0))
+        screen.blit(button1_img, button1_rect)
+        screen.blit(button2_img, button2_rect)
+    elif current_page == 'pre_sim':
+        screen.blit(bg2, (0,0))
+        screen.blit(button3_img, button3_rect)
+    elif current_page == 'simulation':
+        screen.blit(bg3, (0,0))
+    else:
+      for slider in sliders:
+          slider.update()
 
-    for slider in sliders:
-        slider.update()
-
-    screen.fill((255, 255, 255))
-    for slider in sliders:
-        slider.draw(screen)
-    # Draw button and biomass bar
-    submit_button.draw(screen)
-    submit_button.handle_event(event)
-    if show_save:
-        draw_procedural_plant(screen, biomass_percent, plant_id=plant_id, wind_effect=0.2)
-        save_button.draw(screen)
-        save_button.handle_event(event)
-    draw_biomass_bar(screen, x=screen.get_width() - 60, y=200, height=300, percent=biomass_percent, biomass_value=biomass_actual)
-    if show_popup:
-        draw_popup()
+      screen.fill((255, 255, 255))
+      for slider in sliders:
+          slider.draw(screen)
+      # Draw button and biomass bar
+      submit_button.draw(screen)
+      submit_button.handle_event(event)
+      if show_save:
+          draw_procedural_plant(screen, biomass_percent, plant_id=plant_id, wind_effect=0.2)
+          save_button.draw(screen)
+          save_button.handle_event(event)
+      draw_biomass_bar(screen, x=screen.get_width() - 60, y=200, height=300, percent=biomass_percent, biomass_value=biomass_actual)
+      if show_popup:
+          draw_popup()
     pygame.display.flip()
     clock.tick(60)
