@@ -1,7 +1,7 @@
 # General parameters
 
 MAX_BIOMASS = 950                          # Maximum biomass in grams
-LIFETIME = 190                             # Maximum life time of the plant in days
+LIFETIME = 180                             # Maximum life time of the plant in days
 MANUAL_STAGES = False                      # If you want to enter the days of each stage manually
 NUMBER_OF_DAYS_PER_STAGE = [0,0,0,0,0]     # Only fill this when the MANUAL_STAGES is set to true, the sum of all values must equal to the LIFETIME
 
@@ -28,10 +28,12 @@ GROWTH_SIGMAS = {
     "water_cycles": [0.2, 0.15, 0.1, 0.1, 0.05]      
 }
 
-K = 5      # Parameter to tune the growth curve
-A = 3      # Parameter to tune the growth curve
+K = 96      # Parameter to tune the growth curve  (peak day)
+A = 40      # Parameter to tune the growth curve  (controls the spread)
 
 # Damage parameters
+DAMAGE_SENSITIVITY = 0.1
+
 LOW_PARAMETERS = {
     "light_intensity": [
         [5000, 0, 6],                                   #[Critical low, minimum, sigma]  

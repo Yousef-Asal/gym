@@ -3,6 +3,7 @@ from gymnasium import spaces
 import numpy as np
 import os
 import pygame
+import math
 
 class HydroponicEnv(gym.Env):
     def __init__(self):
@@ -40,7 +41,9 @@ class HydroponicEnv(gym.Env):
         self.max_days = 150
         self.height = 0
         self.biomass = 0
-        self.max_biomass = 450  #lesa hn7dedha
+        self.max_biomass = 450 
+        self.K = 70
+        self.A = 20
         #pygame init 
         pygame.init()
         self.screen = pygame.display.set_mode((1440, 900))
@@ -192,11 +195,18 @@ class HydroponicEnv(gym.Env):
         #water 
         f_water_duration = self.factor_function(water_duration_optimal ,self.state['watering_period'] , water_duration_sigma)
         f_n_cycles = self.factor_function (n_cycles_optimal , self.state['watering_cycles'] , n_cycles_sigma)
-        RUE = 3
+        RUE = self.calculate_RUE()
         growth = RUE * f_light * f_temp * f_ph * f_ec * f_rh * f_water_duration * f_n_cycles  
-        print(type(growth))
         return growth
+    
+    def calculate_RUE(self):
+      RUE_max = self.calc_RUE_max(self.max_biomass,self.K,self.A,self.max_days)
+      return RUE_max * math.exp(-((self.current_step - self.K) ** 2) / (2 * self.A ** 2))
 
+    def calc_RUE_max(self,max_biomass, k, a, n):
+        denominator = sum(math.exp(-((x - k) ** 2) / (2 * a ** 2)) for x in range(n + 1))
+        rue_max = max_biomass / denominator
+        return rue_max
 
     def factor_function (self,x_optimal , x , sigma_x): 
         return np.exp(-((x-x_optimal)**2)/(2*(sigma_x)**2))
