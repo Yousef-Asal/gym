@@ -24,7 +24,16 @@ class HydroponicEnv(gym.Env):
         })
 
         # Action space
-        self.action_space = gym.spaces.MultiDiscrete([61, 51, 49, 41, 51, 51, 11, 49])
+        self.action_space = spaces.Dict({
+            "watering_cycles": spaces.Discrete(11), 
+            "watering_period": spaces.Discrete(49),  
+            "temp": spaces.Discrete(51),
+            "RH": spaces.Discrete(61),
+            "light_intensity": spaces.Discrete(41),
+            "light_duration": spaces.Discrete(49),
+            "ec": spaces.Discrete(51),
+            "ph": spaces.Discrete(51)
+        })
 
         self.state = None
         self.episode_length = 1000
@@ -291,18 +300,8 @@ class HydroponicEnv(gym.Env):
 
     def step(self, action):
         self.current_step += 1
-        action_dict = {
-            "watering_cycles": action[6], 
-            "watering_period": action[7],  
-            "temp": action[5],
-            "RH": action[0],
-            "light_intensity": action[3],
-            "light_duration": action[2],
-            "ec": action[1],
-            "ph": action[4]
-        }
 
-        self._apply_actions(action_dict)
+        self._apply_actions(action)
         self.retreive_data()
         self.reward = self.calculate_reward()
         self.state = self._get_observation_state()
@@ -398,49 +397,49 @@ class HydroponicEnv(gym.Env):
 
         #Actions
         #1 Temp
-        self.action_temp_ts = self.font.render(f"{action_dict['temp']+10} C", True, self.GREEN)
+        self.action_temp_ts = self.font.render(f"{action['temp']+10} C", True, self.GREEN)
         self.action_temp_tr = self.action_temp_ts.get_rect()
         self.action_temp_tr.center = (pygame.Vector2(250,765))
         self.screen.blit(self.action_temp_ts, self.action_temp_tr)
 
         #2 RH
-        self.action_rh_ts = self.font.render(f"{action_dict['RH']+30}%", True, self.GREEN)
+        self.action_rh_ts = self.font.render(f"{action['RH']+30}%", True, self.GREEN)
         self.action_rh_tr = self.action_rh_ts.get_rect()
         self.action_rh_tr.center = (pygame.Vector2(250,765+self.y_space))
         self.screen.blit(self.action_rh_ts, self.action_rh_tr)
 
         #3 PH
-        self.action_ph_ts = self.font.render(f"{4.0 + (action_dict['ph'] * 0.1)}", True, self.GREEN)
+        self.action_ph_ts = self.font.render(f"{4.0 + (action['ph'] * 0.1)}", True, self.GREEN)
         self.action_ph_tr = self.action_ph_ts.get_rect()
         self.action_ph_tr.center = (pygame.Vector2(250+self.x_space,765))
         self.screen.blit(self.action_ph_ts, self.action_ph_tr)
 
         #4 EC
-        self.action_ec_ts = self.font.render(f"{action_dict['ec'] * 0.1}", True, self.GREEN)
+        self.action_ec_ts = self.font.render(f"{action['ec'] * 0.1}", True, self.GREEN)
         self.action_ec_tr = self.action_ec_ts.get_rect()
         self.action_ec_tr.center = (pygame.Vector2(250+self.x_space,765+self.y_space))
         self.screen.blit(self.action_ec_ts, self.action_ec_tr)
 
         #5 Light Intensity
-        self.action_light_intensity_ts = self.font.render(f"{action_dict['light_intensity'] * 500}", True, self.GREEN)
+        self.action_light_intensity_ts = self.font.render(f"{action['light_intensity'] * 500}", True, self.GREEN)
         self.action_light_intensity_tr = self.action_light_intensity_ts.get_rect()
         self.action_light_intensity_tr.center = (pygame.Vector2(250+2*self.x_space,765))
         self.screen.blit(self.action_light_intensity_ts, self.action_light_intensity_tr)
 
         #6 Light duration
-        self.action_light_duration_ts = self.font.render(f"{action_dict['light_duration'] * 30}", True, self.GREEN)
+        self.action_light_duration_ts = self.font.render(f"{action['light_duration'] * 30}", True, self.GREEN)
         self.action_light_duration_tr = self.action_light_duration_ts.get_rect()
         self.action_light_duration_tr.center = (pygame.Vector2(250+2*self.x_space,765+self.y_space))
         self.screen.blit(self.action_light_duration_ts, self.action_light_duration_tr)
 
         #7 Water duration/period
-        self.action_water_duration_ts = self.font.render(f"{30 * action_dict['watering_period'] }", True, self.GREEN)
+        self.action_water_duration_ts = self.font.render(f"{30 * action['watering_period'] }", True, self.GREEN)
         self.action_water_duration_tr = self.action_water_duration_ts.get_rect()
         self.action_water_duration_tr.center = (pygame.Vector2(250+3*self.x_space,765))
         self.screen.blit(self.action_water_duration_ts, self.action_water_duration_tr)
 
         #8 Num of water periods
-        self.action_water_periods_ts = self.font.render(f"{action_dict['watering_cycles']}", True, self.GREEN)
+        self.action_water_periods_ts = self.font.render(f"{action['watering_cycles']}", True, self.GREEN)
         self.action_water_periods_tr = self.action_water_periods_ts.get_rect()
         self.action_water_periods_tr.center = (pygame.Vector2(250+3*self.x_space,765+self.y_space))
         self.screen.blit(self.action_water_periods_ts, self.action_water_periods_tr)
